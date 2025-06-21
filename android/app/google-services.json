@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "998566073757",
+    "project_id": "grainguard-c1dbd",
+    "storage_bucket": "grainguard-c1dbd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:998566073757:android:c0dd953d90a15c50ea0b74",
+        "android_client_info": {
+          "package_name": "com.example.grainguard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZIuHwLJN7Sh68r1SBk5nBTlcReEvdMI0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
