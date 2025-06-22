@@ -1,142 +1,258 @@
+//login_screen.dart
 import 'package:flutter/material.dart';
-import 'package:grainguard/home_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'register_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Create a GlobalKey for the form
-    final _formKey = GlobalKey<FormState>();
-    // Controllers for text fields
-    final _usernameController = TextEditingController();
-    final _passwordController = TextEditingController();
+  State<LoginScreen> createState() => _LoginScreenState();
+}
 
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  Future<void> _loginUser() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Query Firestore to find user with matching username
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: _usernameController.text.trim())
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        throw FirebaseAuthException(
+          code: 'user-not-found',
+          message: 'No user found with this username',
+        );
+      }
+
+      final userDoc = querySnapshot.docs.first;
+      final storedPassword = userDoc.data()['password'] as String?;
+
+      // Verify password matches stored password
+      if (storedPassword != _passwordController.text.trim()) {
+        throw FirebaseAuthException(
+          code: 'wrong-password',
+          message: 'Incorrect password',
+        );
+      }
+
+      // Create the same dummy email used in registration
+      String dummyEmail = "${_usernameController.text.trim()}@grainguard.com";
+
+      // Sign in with email and password (using the dummy email)
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: dummyEmail,
+        password: _passwordController.text.trim(),
+      );
+
+      // Initialize containers array if it doesn't exist
+      if (!userDoc.data().containsKey('containers')) {
+        await userDoc.reference.update({
+          'containers': [],
+        });
+      }
+
+      // Navigate to home screen after successful login
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Login failed. Please try again.';
+      if (e.code == 'user-not-found') {
+        errorMessage = 'Username not found';
+      } else if (e.code == 'wrong-password') {
+        errorMessage = 'Incorrect password';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login failed. Please try again.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 60),
-              const Text(
-                'WELCOME!!',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 40),
-              // Username/Email Field
-              TextFormField(
-                controller: _usernameController,
-                decoration: InputDecoration(
-                  labelText: 'Username / Email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  prefixIcon: const Icon(Icons.person_outline),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter username/email';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              // Password Field
-              TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.visibility_off),
-                    onPressed: () {},
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 40),
+                // Logo Image
+                Container(
+                  height: 120,
+                  width: 120,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    image: const DecorationImage(
+                      image: AssetImage('assets/icons/jar.jpg'),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter password';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(color: Colors.blue),
+                const SizedBox(height: 20),
+                const Text(
+                  'WELCOME to GrainGuard',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 134, 8, 141),
                   ),
                 ),
-              ),
-              const SizedBox(height: 30),
-              // Login Button - Updated with validation
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Validate returns true if the form is valid, or false otherwise.
-                    if (_formKey.currentState!.validate()) {
-                      // Only navigate if both fields are filled
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
-                        ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
+                const SizedBox(height: 30),
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: InputDecoration(
+                    labelText: 'Username',
+                    border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    prefixIcon: const Icon(Icons.person_outline),
                   ),
-                  child: const Text(
-                    'Login',
-                    style: TextStyle(fontSize: 16),
-                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter username';
+                    }
+                    return null;
+                  },
                 ),
-              ),
-              const SizedBox(height: 30),
-              const Divider(thickness: 1),
-              const SizedBox(height: 20),
-              // Register Navigation
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Don't have an account?"),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RegisterScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Register',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
                   ),
-                ],
-              ),
-            ],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter password';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      // TODO: Implement forgot password functionality
+                    },
+                    child: const Text(
+                      'Forgot Password?',
+                      style: TextStyle(color: Colors.blue),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _loginUser,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      backgroundColor: const Color.fromARGB(255, 134, 8, 141),
+                    ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(
+                            color: Colors.white,
+                          )
+                        : const Text(
+                            'Login',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                const Divider(thickness: 1),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Don't have an account?"),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Register',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 134, 8, 141),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

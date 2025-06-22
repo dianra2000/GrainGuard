@@ -1,7 +1,9 @@
+//home_screen.dart
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'ContainerInside.dart';
-import '../auth/login_screen.dart'; // Make sure you have this import
+import '../auth/login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,28 +13,37 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<String> containers = ['01'];
-  final String _storageKey = 'saved_containers';
+  List<String> containers = [];
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late String _userId;
 
   @override
   void initState() {
     super.initState();
+    _userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     _loadContainers();
   }
 
   Future<void> _loadContainers() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedContainers = prefs.getStringList(_storageKey);
-    if (savedContainers != null && savedContainers.isNotEmpty) {
-      setState(() {
-        containers = savedContainers;
-      });
+    if (_userId.isEmpty) return;
+
+    final doc = await _firestore.collection('users').doc(_userId).get();
+    if (doc.exists) {
+      final data = doc.data();
+      if (data != null && data.containsKey('containers')) {
+        setState(() {
+          containers = List<String>.from(data['containers'] ?? []);
+        });
+      }
     }
   }
 
   Future<void> _saveContainers() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_storageKey, containers);
+    if (_userId.isEmpty) return;
+
+    await _firestore.collection('users').doc(_userId).update({
+      'containers': containers,
+    });
   }
 
   void _addNewContainer() async {
@@ -91,13 +102,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _logout() async {
-  // Clear any session data if needed
-  // Then navigate to login screen
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (context) => const LoginScreen()),
-  );
-}
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,9 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTap: () => _navigateToContainerDetails(containerId),
                   child: ContainerCard(
                     containerNumber: containerId,
-                    onRemove: containerId != '01' 
-                        ? () => _removeContainer(containerId) 
-                        : null,
+                    onRemove: () => _removeContainer(containerId),
                   ),
                 ),
               )),
@@ -151,12 +159,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class ContainerCard extends StatelessWidget {
   final String containerNumber;
-  final VoidCallback? onRemove;
+  final VoidCallback onRemove;
 
   const ContainerCard({
     super.key,
     required this.containerNumber,
-    this.onRemove,
+    required this.onRemove,
   });
 
   @override
@@ -180,11 +188,10 @@ class ContainerCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (onRemove != null)
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: onRemove,
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: onRemove,
+                ),
               ],
             ),
           ],
