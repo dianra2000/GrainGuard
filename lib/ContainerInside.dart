@@ -186,7 +186,7 @@ class _ContainerInsideState extends State<ContainerInside> {
                                         value.toStringAsFixed(1), // Display weight with 1 decimal place
                                         style: const TextStyle(fontSize: 10),
                                       );
-                                    },
+                                    }
                                   ),
                                 ),
                               ),
