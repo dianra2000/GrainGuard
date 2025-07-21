@@ -25,11 +25,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      // Create a dummy email since Firebase Auth requires email
+      
       String dummyEmail = "${_usernameController.text.trim()}@grainguard.com";
       String password = _passwordController.text.trim();
       
-      // Create user with email and password
+      
       UserCredential userCredential = 
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: dummyEmail,
@@ -47,7 +47,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'containers': [], // Initialize empty containers array
       });
 
-      // Navigate to home screen after successful registration
+      
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/home');
       }
@@ -89,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container( // Wrap the existing Padding with a Container
+      body: Container( 
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -98,7 +98,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
              Color.fromARGB(255, 179, 138, 216), // Lighter purple at the top
               Colors.white, // White at the bottom
             ],
-            stops: [0.0, 1.0], // Smooth transition from top to bottom
+            stops: [0.0, 1.0], 
           ),
         ),
         child: Padding(

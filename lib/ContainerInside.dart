@@ -289,20 +289,17 @@ class _ContainerInsideState extends State<ContainerInside> {
         onAddPressed: () {
           // Navigate back to HomeScreen to add a new container
           Navigator.pop(context);
-          // You might want to add a mechanism to automatically open the add dialog on HomeScreen
-          // For now, it just goes back to the home screen.
+          
         },
         onHistoryPressed: () {
-          // Already on a container's history screen, so do nothing or refresh
-          // For now, it does nothing.
+         
         },
       ),
     );
   }
 }
 
-// Re-defining BottomNavigation here for self-containment as requested
-// In a real app, this would typically be in a shared widget file.
+
 class BottomNavigation extends StatelessWidget {
   final VoidCallback onHomePressed;
   final VoidCallback onAddPressed;
@@ -336,17 +333,17 @@ class BottomNavigation extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.home, size: 30),
             onPressed: onHomePressed,
-            color: Colors.grey, // Not active on this screen
+            color: Colors.grey, 
           ),
           IconButton(
-            icon: const Icon(Icons.add, size: 30), // Plus icon
+            icon: const Icon(Icons.add, size: 30), 
             onPressed: onAddPressed,
             color: Colors.grey,
           ),
           IconButton(
-            icon: const Icon(Icons.history, size: 30), // History icon
+            icon: const Icon(Icons.history, size: 30), 
             onPressed: onHistoryPressed,
-            color: Colors.blue, // Active color for history as this screen shows history
+            color: Colors.blue, 
           ),
         ],
       ),

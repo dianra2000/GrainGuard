@@ -50,23 +50,23 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
 
-      // Create the same dummy email used in registration
+      
       String dummyEmail = "${_usernameController.text.trim()}@grainguard.com";
 
-      // Sign in with email and password (using the dummy email)
+      
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: dummyEmail,
         password: _passwordController.text.trim(),
       );
 
-      // Initialize containers array if it doesn't exist
+      
       if (!userDoc.data().containsKey('containers')) {
         await userDoc.reference.update({
           'containers': [],
         });
       }
 
-      // Navigate to home screen after successful login
+      // Navigate to home screen after  login
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/home');
       }

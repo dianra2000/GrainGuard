@@ -25,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _loadContainers();
     } else {
       // If user is null, navigate back to login screen
-      WidgetsBinding.instance.addPostFrameCallback((_) { // Corrected method name here
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const LoginScreen()),
